@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Проверка призов</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a0533 0%, #2d1b69 50%, #1a0533 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow-x: hidden;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .particles { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
+        .particle { position: absolute; background: #a78bfa; border-radius: 50%; opacity: 0; will-change: transform, opacity; }
+
+        @keyframes float {
+            0% { transform: translateY(100vh); opacity: 0; }
+            10% { opacity: 0.6; }
+            90% { opacity: 0.6; }
+            100% { transform: translateY(-20px); opacity: 0; }
+        }
+
+        .container { position: relative; z-index: 10; text-align: center; padding: 40px 20px; }
+
+        .title {
+            color: #e9d5ff; font-size: 28px; margin-bottom: 20px;
+            text-shadow: 0 0 20px rgba(167, 139, 250, 0.8);
+            animation: fadeInDown 1s ease;
+        }
+        .subtitle { color: #c4b5fd; font-size: 16px; margin-bottom: 40px; animation: fadeInDown 1s ease 0.3s both; }
+
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .check-btn {
+            position: relative; padding: 20px 40px; font-size: 18px; font-weight: 600; color: #fff;
+            background: linear-gradient(135deg, #7c3aed, #a855f7);
+            border: none; border-radius: 16px; cursor: pointer; overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            box-shadow: 0 10px 40px rgba(124, 58, 237, 0.4);
+            animation: fadeInUp 1s ease 0.6s both;
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .check-btn:hover { transform: translateY(-3px) scale(1.03); box-shadow: 0 15px 50px rgba(124, 58, 237, 0.6); }
+        .check-btn:active { transform: scale(0.98); }
+        .check-btn::before {
+            content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            animation: shimmer 2.5s infinite; will-change: transform;
+        }
+        @keyframes shimmer { 0% { left: -100%; } 100% { left: 100%; } }
+
+        .countdown-section { display: none; text-align: center; animation: fadeInScale 0.5s ease; }
+        @keyframes fadeInScale {
+            from { opacity: 0; transform: scale(0.8); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .countdown-text { color: #e9d5ff; font-size: 22px; margin-bottom: 30px; text-shadow: 0 0 15px rgba(167, 139, 250, 0.6); }
+        .ring-container { position: relative; display: inline-block; margin-bottom: 20px; }
+        .ring {
+            width: 180px; height: 180px; border-radius: 50%;
+            border: 4px solid rgba(167, 139, 250, 0.3);
+            position: relative; display: flex; justify-content: center; align-items: center;
+        }
+        .ring::before {
+            content: ''; position: absolute; top: -4px; left: -4px; right: -4px; bottom: -4px;
+            border-radius: 50%; border: 4px solid transparent;
+            border-top-color: #a855f7; border-right-color: #7c3aed;
+            animation: spin 1.2s linear infinite; will-change: transform;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .countdown-number {
+            font-size: 100px; font-weight: 800; color: #fff;
+            text-shadow: 0 0 40px rgba(167, 139, 250, 0.8);
+            animation: pulse 1s ease infinite;
+        }
+        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); } }
+        .countdown-progress { width: 200px; height: 6px; background: rgba(167, 139, 250, 0.2); border-radius: 3px; margin: 30px auto; overflow: hidden; }
+        .countdown-progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #7c3aed, #a855f7, #c084fc);
+            border-radius: 3px; width: 0%; transition: width 1s linear; will-change: width;
+        }
+
+        .result-screen { display: none; text-align: center; padding: 30px 20px; max-width: 500px; animation: fadeInScale 0.8s ease; }
+        .result-screen.show { display: block; }
+        .lightning-title {
+            font-size: 26px; color: #fff; margin-bottom: 30px;
+            text-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+        @keyframes glow {
+            from { text-shadow: 0 0 20px rgba(255, 215, 0, 0.8); }
+            to { text-shadow: 0 0 30px rgba(255, 215, 0, 1), 0 0 50px rgba(255, 165, 0, 0.6); }
+        }
+        .result-card {
+            background: rgba(124, 58, 237, 0.25); border: 1px solid rgba(167, 139, 250, 0.4);
+            border-radius: 24px; padding: 30px; margin-bottom: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3); animation: slideUp 0.6s ease;
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(50px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .prize-icon { font-size: 60px; margin-bottom: 15px; animation: bounce 2s ease infinite; }
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-15px); }
+            60% { transform: translateY(-8px); }
+        }
+        .prize-amount { font-size: 36px; font-weight: 800; color: #fff; margin: 15px 0; text-shadow: 0 0 20px rgba(167, 139, 250, 0.8); }
+        .prize-desc { color: #c4b5fd; font-size: 16px; line-height: 1.6; }
+        .warning-box {
+            background: rgba(255, 100, 100, 0.15); border: 1px solid rgba(255, 100, 100, 0.4);
+            border-radius: 16px; padding: 20px; margin-bottom: 20px; animation: slideUp 0.6s ease 0.2s both;
+        }
+        .warning-text { color: #fca5a5; font-size: 14px; line-height: 1.5; }
+        .link-box {
+            background: rgba(34, 197, 94, 0.15); border: 1px solid rgba(34, 197, 94, 0.4);
+            border-radius: 16px; padding: 20px; margin-bottom: 20px; animation: slideUp 0.6s ease 0.4s both;
+        }
+        .link-text { color: #86efac; font-size: 14px; line-height: 1.6; }
+        .link-url {
+            display: inline-block; margin-top: 10px; color: #fff; font-weight: 600;
+            background: rgba(255,255,255,0.1); padding: 8px 16px; border-radius: 8px;
+            text-decoration: none; transition: background 0.3s ease;
+        }
+        .link-url:hover { background: rgba(255,255,255,0.2); }
+
+        .screenshot-box {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(147, 51, 234, 0.2));
+            border: 2px solid rgba(167, 139, 250, 0.6); border-radius: 16px; padding: 25px;
+            margin-bottom: 20px; animation: slideUp 0.6s ease 0.6s both; position: relative; overflow: hidden;
+        }
+        .screenshot-box::after {
+            content: ''; position: absolute; top: -2px; left: -2px; right: -2px; bottom: -2px;
+            border-radius: 16px; border: 2px solid #a855f7; opacity: 0;
+            animation: borderPulse 2s ease-in-out infinite; pointer-events: none;
+        }
+        @keyframes borderPulse {
+            0%, 100% { opacity: 0; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.02); }
+        }
+        .screenshot-box::before {
+            content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+            animation: shimmerBox 3s infinite; pointer-events: none;
+        }
+        @keyframes shimmerBox { 0% { left: -100%; } 100% { left: 100%; } }
+        .screenshot-title { font-size: 18px; font-weight: 700; color: #e9d5ff; margin-bottom: 12px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .screenshot-icon { font-size: 24px; animation: shake 2s ease infinite; }
+        @keyframes shake {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(-10deg); }
+            75% { transform: rotate(10deg); }
+        }
+        .screenshot-text { color: #c4b5fd; font-size: 15px; line-height: 1.6; margin-bottom: 15px; }
+        .screenshot-link {
+            display: inline-block; color: #fff; font-weight: 700; font-size: 16px;
+            background: linear-gradient(135deg, #7c3aed, #a855f7); padding: 12px 24px;
+            border-radius: 12px; text-decoration: none; transition: transform 0.3s ease;
+            box-shadow: 0 4px 15px rgba(124, 58, 237, 0.4); position: relative; z-index: 1;
+        }
+        .screenshot-link:hover { transform: scale(1.05); }
+        .footer-text { color: #c4b5fd; font-size: 14px; margin-top: 20px; animation: fadeIn 1s ease 1s both; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .hidden { display: none !important; }
+
+        .confetti { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 100; }
+        .confetti-piece { position: absolute; top: -10px; animation: confettiFall linear forwards; }
+        @keyframes confettiFall {
+            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+
+        .orb { position: fixed; border-radius: 50%; opacity: 0.15; z-index: 1; pointer-events: none; }
+        .orb-1 { width: 300px; height: 300px; background: radial-gradient(circle, #7c3aed, transparent); top: -100px; right: -100px; }
+        .orb-2 { width: 200px; height: 200px; background: radial-gradient(circle, #a855f7, transparent); bottom: -50px; left: -50px; }
+        .orb-3 { width: 150px; height: 150px; background: radial-gradient(circle, #c084fc, transparent); top: 50%; left: 50%; transform: translate(-50%, -50%); }
+    </style>
+</head>
+<body>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+    <div class="particles" id="particles"></div>
+
+    <div class="container" id="mainScreen">
+        <h1 class="title">🎁 Проверка призов</h1>
+        <p class="subtitle">Нажмите кнопку, чтобы узнать ваш приз</p>
+        <button class="check-btn" onclick="startCountdown()">🔍 Проверить наличие призов</button>
+    </div>
+
+    <div class="container countdown-section" id="countdownScreen">
+        <div class="ring-container">
+            <div class="ring"><span class="countdown-number" id="countdownNumber">10</span></div>
+        </div>
+        <p class="countdown-text">🔍 Идёт проверка...</p>
+        <div class="countdown-progress"><div class="countdown-progress-bar" id="progressBar"></div></div>
+    </div>
+
+    <div class="container result-screen" id="resultScreen">
+        <div class="result-card">
+            <div class="prize-icon">⚡🏆⚡</div>
+            <h2 class="lightning-title">⚡ 3‑е место! Поздравляем! ⚡</h2>
+            <div class="prize-amount">💲 2 000 рублей</div>
+            <p class="prize-desc">или любой подарок ТГ (на ваш выбор)</p>
+        </div>
+        <div class="warning-box">
+            <p class="warning-text">⚠️ Выигрыш действует <strong>24 часа</strong>, если не заберёте — выигрыш не придёт!</p>
+        </div>
+        <div class="link-box">
+            <p class="link-text">✔️ Ссылка куда писать (обязательно прикрепите скрин с этим сообщением):</p>
+            <a href="https://t.me/PulseTorik?direct" class="link-url" target="_blank">t.me/PulseTorik?direct</a>
+        </div>
+        <div class="screenshot-box">
+            <div class="screenshot-title"><span class="screenshot-icon">📸</span> Перешлите скрин экрана сюда:</div>
+            <p class="screenshot-text">Сделайте скриншот этого экрана и отправьте его по ссылке ниже для получения приза</p>
+            <a href="https://t.me/PulseTorik?direct" class="screenshot-link" target="_blank">✈️ t.me/PulseTorik</a>
+        </div>
+        <p class="footer-text">Спасибо за вашу поддержку и участие! 💜<br>Дальше — только выше! 🚀</p>
+    </div>
+
+    <div class="confetti" id="confetti"></div>
+
+    <script>
+        function createParticles() {
+            const container = document.getElementById('particles');
+            const fragment = document.createDocumentFragment();
+            for (let i = 0; i < 12; i++) {
+                const p = document.createElement('div');
+                p.className = 'particle';
+                p.style.left = Math.random() * 100 + '%';
+                const size = Math.random() * 4 + 2;
+                p.style.width = size + 'px';
+                p.style.height = size + 'px';
+                p.style.animation = `float ${Math.random() * 10 + 8}s linear ${Math.random() * 6}s infinite`;
+                fragment.appendChild(p);
+            }
+            container.appendChild(fragment);
+        }
+
+        function startCountdown() {
+            document.getElementById('mainScreen').classList.add('hidden');
+            document.getElementById('countdownScreen').style.display = 'block';
+            let count = 10;
+            const numberEl = document.getElementById('countdownNumber');
+            const progressBar = document.getElementById('progressBar');
+            progressBar.style.width = '0%';
+            requestAnimationFrame(() => { progressBar.style.width = '100%'; });
+            const interval = setInterval(() => {
+                count--;
+                numberEl.textContent = count;
+                if (count <= 0) { clearInterval(interval); showResult(); }
+            }, 1000);
+        }
+
+        function showResult() {
+            document.getElementById('countdownScreen').style.display = 'none';
+            document.getElementById('resultScreen').classList.add('show');
+            document.getElementById('resultScreen').style.display = 'block';
+            createConfetti();
+        }
+
+        function createConfetti() {
+            const container = document.getElementById('confetti');
+            const fragment = document.createDocumentFragment();
+            const colors = ['#7c3aed', '#a855f7', '#c084fc', '#e9d5ff', '#ffd700', '#ff6b6b', '#4ade80'];
+            for (let i = 0; i < 40; i++) {
+                const piece = document.createElement('div');
+                piece.className = 'confetti-piece';
+                piece.style.left = Math.random() * 100 + '%';
+                piece.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                const size = Math.random() * 8 + 4;
+                piece.style.width = size + 'px';
+                piece.style.height = size + 'px';
+                piece.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
+                piece.style.animation = `confettiFall ${Math.random() * 3 + 2}s linear ${Math.random() * 1.5}s forwards`;
+                fragment.appendChild(piece);
+            }
+            container.appendChild(fragment);
+            setTimeout(() => { container.innerHTML = ''; }, 5000);
+        }
+
+        createParticles();
+    </script>
+</body>
+</html>
